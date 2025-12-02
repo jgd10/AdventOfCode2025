@@ -43,6 +43,11 @@ def principal_period(s):
 
 # My version of principal period below. This is more intuitive and
 # comparable in speed (tbh there's not much in it)
+# Both versions rely on the same idea of searching for the first
+# reoccurrence of the string within itself. And depend on the idea
+# that if a string is made up of repeated substrings, then
+# it will appear again within the concatenated string.
+# This is the crucial insight I took from the stackoverflow answer.
 def is_id_invalid(id_: str):
     combined = id_ + id_
     return id_ in combined[1:-1]
