@@ -44,7 +44,7 @@ def part1():
             safe.increase_by(int(row.replace('R', '')))
         elif 'L' in row:
             safe.reduce_by(int(row.replace('L', '')))
-    print(safe.counter)
+    print(f'Part 1: {safe.counter}')
     return
 
 
@@ -56,7 +56,6 @@ def part2():
             safe.increase_by(int(row.replace('R', '')))
         elif 'L' in row:
             safe.reduce_by(int(row.replace('L', '')))
-        print(row, safe.needle, safe.counter)
     print(f'Part2: {safe.counter}')
     return
 
