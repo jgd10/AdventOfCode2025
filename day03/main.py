@@ -20,41 +20,44 @@ def part1(data: str) -> int:
     return sum(joltages)
 
 
-def part2(data: str) -> int:
+def part2(data: list[str]) -> int:
+    vals = find_max_joltages(data, 12)
+    return sum(vals)
+
+
+def find_max_joltages(data: list[str], digits: int) -> list[int]:
     joltages = []
     for row in data:
         batteries = [int(i) for i in list(row)]
-        best_combo = []  # batteries[:12]
-        while len(best_combo) < 12:
+        best_combo = []
+        index = -1
+        while len(best_combo) < digits:
             j = len(best_combo)
-            batteries_remaining = len(batteries)
-            index = min(batteries_remaining, 11) - j + 1
-            viable_batteries = batteries[min(j, 12):batteries_remaining-index]
-            best_battery = max(viable_batteries)
-            best_battery_index = batteries.index(best_battery)
+            h = digits - j
+            end_index = -(h - 1)
+            if end_index == 0:
+                end_index = len(batteries)
+            viable = batteries[index+1:end_index]
+            best_battery = max(viable)
+            best_index = viable.index(best_battery)
+            for i in range(best_index+1):
+                viable[i] = 0
+            batteries[index+1:end_index] = viable
+            if index == -1:
+                index = 0
+            index += best_index
             best_combo.append(best_battery)
-            batteries.pop(best_battery_index+min(j,12))
-        print(row, best_combo)
         joltage = int(''.join([str(i) for i in best_combo]))
         joltages.append(joltage)
+    return joltages
 
-        #for i, bat in enumerate(batteries):
-        #    digits_left = min(len(batteries), 12)
-        #    best_battery = max(batteries[])
-        #    for j in range(12 - digits_left, min(i, 12)):
-        #        if int(bat) > int(best_combo[j]):
-        #            best_combo[j:] = batteries[i:i+digits_left]
-        #if int(batteries[-1]) > int(best_combo[1]):
-        #    best_combo[1] = batteries[-1]
-        #joltage = int(''.join(best_combo))
-        #joltages.append(joltage)
-    return sum(joltages)
 
 def main():
-    data = parse_file(InputType.EXAMPLE2)
+    data = parse_file(InputType.INPUT)
 
     result1 = part1(data)
     print(f"Part 1: {result1}")
+    print(f"Part 1: {sum(find_max_joltages(data, 2))}")
 
     result2 = part2(data)
     print(f"Part 2: {result2}")
