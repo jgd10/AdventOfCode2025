@@ -27,7 +27,8 @@ def part2(data: list[str]) -> int:
 
 def find_max_joltages(data: list[str], digits: int) -> list[int]:
     joltages = []
-    for row in data:
+
+    for ii, row in enumerate(data):
         batteries = [int(i) for i in list(row)]
         best_combo = []
         index = -1
@@ -47,6 +48,8 @@ def find_max_joltages(data: list[str], digits: int) -> list[int]:
                 index = 0
             index += best_index
             best_combo.append(best_battery)
+            line_viz = ''.join([str(b) for b in batteries]) + ' - ' + ''.join([str(c) for c in best_combo])
+            print(line_viz)
         joltage = int(''.join([str(i) for i in best_combo]))
         joltages.append(joltage)
     return joltages
@@ -57,7 +60,7 @@ def main():
 
     result1 = part1(data)
     print(f"Part 1: {result1}")
-    print(f"Part 1: {sum(find_max_joltages(data, 2))}")
+    print(f"Part 1: {sum(find_max_joltages(data, 12))}")
 
     result2 = part2(data)
     print(f"Part 2: {result2}")
