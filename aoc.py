@@ -319,3 +319,61 @@ def visualise(points: dict[Point, str], filepath: pathlib.Path = None,
     if filepath is not None:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(string)
+
+
+@dataclass(frozen=True)
+class Interval:
+    start: int
+    end: int
+
+    def overlaps(self,
+                 other: 'Interval') -> bool:
+        return self.start <= other.end and self.end >= other.start
+
+
+    def is_in(self, value: int) -> bool:
+        return self.start <= value <= self.end
+
+
+    def combine_overlapping(self, other: 'Interval') -> 'Interval':
+        new_start = min(self.start, other.start)
+        new_end = max(self.end, other.end)
+        return Interval(new_start, new_end)
+
+    def calc_valid_count(self) -> int:
+        return self.end - self.start + 1
+
+
+@dataclass
+class IntervalCollection:
+    intervals: set[Interval]
+
+    @property
+    def count(self) -> int:
+        return len(self.intervals)
+
+    def add_interval(self, interval: Interval):
+        initial_intervals = self.intervals.copy()
+        overlaps = False
+        for existing in initial_intervals:
+            if existing.overlaps(interval):
+                overlaps = True
+                new = existing.combine_overlapping(interval)
+                self.intervals.remove(existing)
+                self.intervals.add(new)
+        if not overlaps:
+            self.intervals.add(interval)
+
+    def consolidate_intervals(self):
+        num_intervals = self.count
+        while True:
+            self._consolidate_intervals_once()
+            if self.count == num_intervals:
+                break
+            num_intervals = self.count
+
+    def _consolidate_intervals_once(self):
+        consolidated = IntervalCollection(set())
+        for interval in self.intervals:
+            consolidated.add_interval(interval)
+        self.intervals = consolidated.intervals
