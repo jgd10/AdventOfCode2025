@@ -1,4 +1,4 @@
-from aoc import parse_file, InputType
+from aoc import parse_file, InputType, timer
 from dataclasses import dataclass
 from copy import deepcopy
 
@@ -20,43 +20,6 @@ class Vector3D:
         return cls(int(nums[0]), int(nums[1]), int(nums[2]))
 
 
-def consolidate_circuits2(circuits: list[set[Vector3D]]) -> list[set[
-    Vector3D]]:
-    parent = {}
-
-    def find(x):
-        parent.setdefault(x, x)
-        # path compression
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(a, b):
-        ra, rb = find(a), find(b)
-        if ra != rb:
-            parent[rb] = ra
-
-    # union all elements that appear in the same input set
-    for s in circuits:
-        elems = list(s)
-        if not elems:
-            continue
-        first = elems[0]
-        parent.setdefault(first, first)
-        for e in elems[1:]:
-            parent.setdefault(e, e)
-            union(first, e)
-
-    # collect groups by root
-    groups = {}
-    for elem in parent:
-        root = find(elem)
-        groups.setdefault(root, set()).add(elem)
-
-    return list(groups.values())
-
-
 def connect_closest_pairs(points: set[Vector3D], number: int):
     pairs = find_closest_pairs(points)
     connected_pairs = set()
@@ -75,9 +38,6 @@ def find_closest_pairs(points: set[Vector3D]) -> list[
     pairs = [(k, v) for k, v in sorted(pairs.items(),
                                        key=lambda item: item[1])]
     return pairs
-
-
-
 
 
 def consolidate_circuits(circuits: list[set[Vector3D]]):
@@ -102,9 +62,7 @@ def connect_until_mega_circuit(points):
     for p in pairs:
         all_junctions.update(p[0])
     while len(biggest_circuit) != len(all_junctions):
-        print(len(biggest_circuit), len(all_junctions))
         pair, _ = pairs.pop(0)
-        p1, p2 = pair
         pair_in_circuit = False
         intersecting_circuits = []
         for circuit in circuits:
@@ -117,11 +75,10 @@ def connect_until_mega_circuit(points):
                 for c2 in intersecting_circuits:
                     if c.intersection(c2):
                         c.update(c2)
-        #consolidate_circuits2(circuits)
         if not pair_in_circuit:
             circuits.append(set(pair))
-        len_circuits = [c for c in {frozenset(d) for d in circuits}]
-        len_circuits = sorted(len_circuits, reverse=True, key=len)
+        circuits = [set(s) for s in {frozenset(d) for d in circuits}]
+        len_circuits = sorted(circuits, reverse=True, key=len)
         biggest_circuit = set(len_circuits[0])
     p1, p2 = pair
     return p1.x * p2.x 
@@ -178,11 +135,24 @@ def part2(data: list[str]) -> int:
     return result
 
 
-def main():
+@timer()
+def part1_for_timer():
     data = parse_file(InputType.INPUT)
-    #result1 = part1(data, 10)
-    #print(f'Part 1: {result1}')
+    result1 = part1(data, 1000)
+    return result1
+
+
+@timer()
+def part2_for_timer():
+    data = parse_file(InputType.INPUT)
     result2 = part2(data)
+    return result2
+
+
+def main():
+    result1 = part1_for_timer()
+    print(f'Part 1: {result1}')
+    result2 = part2_for_timer()
     print(f'Part 2: {result2}')
     
     
