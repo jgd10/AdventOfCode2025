@@ -266,6 +266,25 @@ class Vector:
     def zero(cls):
         return cls(0, 0)
 
+    def area(self):
+        return abs(self.x * self.y)
+
+    def rectangle_area(self, other: 'Vector') -> int:
+        delta_x = abs(self.x - other.x) + 1
+        delta_y = abs(self.y - other.y) + 1
+        return delta_x * delta_y
+
+    def rectangle_points(self, other: 'Vector') -> set['Vector']:
+        xmin = min(self.x, other.x)
+        xmax = max(self.x, other.x)
+        ymin = min(self.y, other.y)
+        ymax = max(self.y, other.y)
+        vectors = set()
+        for x in range(xmin, xmax + 1):
+            for y in range(ymin, ymax + 1):
+                vectors.add(Vector(x, y))
+        return vectors
+
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
@@ -377,3 +396,20 @@ class IntervalCollection:
         for interval in self.intervals:
             consolidated.add_interval(interval)
         self.intervals = consolidated.intervals
+
+
+@dataclass(frozen=True)
+class Vector3D:
+    x: int
+    y: int
+    z: int
+
+    def distance(self, other):
+        return ((self.x - other.x)**2
+                + (self.y - other.y)**2
+                + (self.z - other.z)**2)
+
+    @classmethod
+    def from_str(cls, string):
+        nums = string.split(',')
+        return cls(int(nums[0]), int(nums[1]), int(nums[2]))
