@@ -1,5 +1,7 @@
 from aoc import parse_file, InputType, Vector, timer
-from shapely import Point, Polygon
+from shapely import Polygon
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import copy
 
 
@@ -62,10 +64,32 @@ def get_green_vectors(vectors: list[Vector]):
     green_vectors.update(green_area)
     return green_vectors
 
+
+def plot_floor(polygon: Polygon, rectangle: list[tuple[int, int]] = None, area: int = 0, iteration: int = 0, best_area: int = 0):
+    x, y = polygon.exterior.xy
+    hfont = {'fontname':'Source Code Pro'}
+    fig, ax = plt.subplots()
+    ax.plot(x, y, '.', mfc='red', mec='None', linestyle='-', color='green', ms=3)
+    if rectangle is not None:
+        rect = patches.Rectangle(rectangle[0], rectangle[1][0], rectangle[1][1], edgecolor='red', facecolor='red', alpha=0.5)
+        ax.add_patch(rect)
+        rounded_best_area = round(best_area, -3)
+        rounded_area = round(area, -3)
+        ax.set_title(f'Rectangle area ≈ {rounded_area:,}\nLargest area ≈ {rounded_best_area:,}', **hfont)
+        ax.title.set_color('white')
+    ax.set_aspect('equal')
+    ax.set_axis_off()
+    fig.patch.set_facecolor('#0F0F23')
+    fig.savefig(f'part2/rectangles{iteration:04d}.png', dpi=200)
+    plt.close('all')
+
+
 @timer()
 def part2():
     vectors = get_vectors()
     polygon = Polygon([(v.x, v.y) for v in vectors+[vectors[0]]])
+    plot_floor(polygon)
+    iteration = 1
     green_vectors = get_green_vectors(vectors)
     green_vectors.update(vectors)
     #visualise(set(vectors), green_vectors)
@@ -78,13 +102,23 @@ def part2():
                     continue
                 areas[key] = vector1.rectangle_area(vector2)
     filtered_areas = {}
+    best_area = 0
     for key, area in areas.items():
         v1, v2 = key
         xmin, xmax = min(v1.x, v2.x), max(v1.x, v2.x)
         ymin, ymax = min(v1.y, v2.y), max(v1.y, v2.y)
-        rectangle : Polygon = Polygon([(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)])
+        rectangle : Polygon = Polygon([(xmin, ymin), (xmax, ymin),
+                                       (xmax, ymax), (xmin, ymax),
+                                       (xmin, ymin)])
         if rectangle.within(polygon):
+            best_area = max(area, best_area)
+            plot_floor(polygon,
+                       [(xmin, ymin), ((xmax-xmin), (ymax-ymin))],
+                       area, iteration, best_area)
+            iteration += 1
             filtered_areas[key] = area
+
+
     sorted_areas = sorted(filtered_areas.values(), reverse=True)
     return sorted_areas[0]
 

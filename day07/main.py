@@ -1,5 +1,7 @@
 from aoc import parse_file, Point, Direction, InputType
 from dataclasses import dataclass
+import paintbychar as pbc
+
 
 
 @dataclass
@@ -39,7 +41,8 @@ class TachyonManifold:
     def build_tree(self):
         ymax = max(p.y for p in self.spaces)
         paths = {self.start: 1}
-
+        iteration = 0
+        save_state_as_image(paths, ymax, self, iteration)
         # process row by row (y increases monotonically), so parents are handled before children
         for y in range(self.start.y, ymax):
             row_points = [p for p in paths if p.y == y]
@@ -64,7 +67,9 @@ class TachyonManifold:
                         paths[downward] += count
                     else:
                         paths[downward] = count
-        return sum(v for k, v in paths.items() if k.y == ymax)
+            iteration += 1
+            save_state_as_image(paths, ymax, self, iteration)
+        return paths, ymax
     
     @classmethod
     def from_data(cls, data: list[str]) -> 'TachyonManifold':
@@ -93,8 +98,53 @@ def part1(data: list[str]) -> int:
 
 def part2(data: list[str]) -> int:
     tm = TachyonManifold.from_data(data)
-    timelines = tm.build_tree()
-    return timelines
+    paths, ymax = tm.build_tree()
+    return sum(v for k, v in paths.items() if k.y == ymax)
+
+
+def save_state_as_image(paths, ymax, tm, iteration: int):
+    string = redraw(paths, ymax, tm)
+    img = pbc.string_to_image(string, preset='plasma', bg_color='white',
+                              fill_option=pbc.FillOption.CHARS)
+    pbc.save_image(img, f'part2/timeline_density{iteration:04d}.png')
+
+
+def redraw(paths: dict, ymax: int, tm: TachyonManifold) -> str:
+    data = [['.' for _ in range(ymax+1)] for __ in range(ymax+1)]
+    max_value = 547847144422  # max(paths.values()), hardcoded for plotting
+    for path, value in paths.items():
+        match value:
+            case value if value < max_value*.000000001:
+                char = '0'
+            case value if max_value *.000000001 < value <= max_value*.00000001:
+                char = '1'
+            case value if max_value *.00000001 < value <= max_value*.0000001:
+                char = '2'
+            case value if max_value *.0000001 < value <= max_value*.000001:
+                char = '3'
+            case value if max_value *.000001 < value <= max_value*.00001:
+                char = '4'
+            case value if max_value *.00001 < value <= max_value*.0001:
+                char = '5'
+            case value if max_value *.0001 < value <= max_value*.001:
+                char = '6'
+            case value if max_value *.001 < value <= max_value*.01:
+                char = '7'
+            case value if max_value *.01 < value <= max_value*.1:
+                char = '8'
+            case value if max_value *.1 < value <= max_value:
+                char = '9'
+            case _:
+                raise ValueError
+        data[path.y][path.x] = char
+    for splitter in tm.splitters:
+        data[splitter.y][splitter.x] = '^'
+    data[tm.start.y][tm.start.x] = 'S'
+    rows = []
+    for row in data:
+        rows.append(''.join(row))
+    string = '\n'.join(rows)
+    return string
 
 
 def main():
