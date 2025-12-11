@@ -28,7 +28,7 @@ class TimeUnit(Enum):
 
 
 # Based on https://stackoverflow.com/questions/1622943/timeit-versus-timing-decorator
-def timer(unit: TimeUnit = TimeUnit.s):
+def timer(unit: TimeUnit = TimeUnit.s, display_args: bool = False):
     def timing(f):
         @wraps(f)
         def wrap(*args, **kw):
@@ -48,8 +48,12 @@ def timer(unit: TimeUnit = TimeUnit.s):
                 case TimeUnit.hr:
                     time_string = f'{(te - ts)/3600.:.4f} hr'
                 case _:
-                    ValueError
-            print(f'func:{f.__name__} args:{args}{kw} took: {time_string}')
+                    raise ValueError
+            if display_args:
+                print(f'func:{f.__name__} args:{args}{kw} took: {time_string}')
+            else:
+                print(f'func:{f.__name__} took: {time_string}')
+
             return result
         return wrap
     return timing

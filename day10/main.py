@@ -1,8 +1,10 @@
-from aoc import parse_file, InputType
+from aoc import parse_file, InputType, timer
 from dataclasses import dataclass
 from sympy import linsolve, Symbol
 from sympy.abc import symbols
 from itertools import product
+from pulp import (LpProblem, LpVariable, lpSum, LpMinimize, LpInteger,
+                  PULP_CBC_CMD)
 
 
 @dataclass(frozen=True)
@@ -128,18 +130,16 @@ class EquationSet:
             return sum(concrete_sol)
 
     def minimal_presses(self):
-        from pulp import LpProblem, LpVariable, lpSum, LpMinimize, LpInteger
-
         num_buttons = len(self.buttons)
         num_coords = len(self.target)
-        prob = LpProblem("MinimalPresses", LpMinimize, msg=0)
+        prob = LpProblem("MinimalPresses", LpMinimize)
         x = [LpVariable(f"x{i}", lowBound=0, cat=LpInteger) for i in range(num_buttons)]
         # Objective
         prob += lpSum(x)
         # Constraints
         for j in range(num_coords):
             prob += lpSum(self.buttons[i][j] * x[i] for i in range(num_buttons)) == self.target[j]
-        prob.solve()
+        prob.solve(PULP_CBC_CMD(msg=0))
         solution = [v.varValue for v in x]
         return sum(solution)
 
@@ -222,7 +222,7 @@ class MachineJoltage:
 
         return sum(presses)
 
-
+@timer()
 def part1(data: str) -> int:
     machines = [Machine.from_string(row) for row in data]
     #optimal_presses = [m.get_optimal_presses() for m in machines]
@@ -233,13 +233,13 @@ def part1(data: str) -> int:
     return sum(optimal_presses)
 
 
+@timer()
 def part2(data: str) -> int:
     machines = [EquationSet.from_string(row) for row in data]
     optimal_presses = []
     for m in machines:
         presses = m.minimal_presses()
         optimal_presses.append(presses)
-        print(presses)
     return sum(optimal_presses)
 
 
