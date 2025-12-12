@@ -1,9 +1,6 @@
 import functools
-
-from aoc import parse_file, InputType
+from aoc import parse_file, InputType, timer, TimeUnit
 from functools import cache
-import networkx as nx
-from igraph import Graph
 from dataclasses import dataclass
 
 def count_all_paths(graph: dict[str, str], start: str, end: str) -> int:
@@ -59,7 +56,7 @@ class MemoGraph:
             counter += self.dfs(node, end)
         return counter
 
-
+@timer(TimeUnit.us)
 def part1():
     data = parse_file(InputType.INPUT)
     graph = {}
@@ -70,6 +67,7 @@ def part1():
     return mg.dfs('you', 'out')
 
 
+@timer(TimeUnit.us)
 def part2():
     data = parse_file(InputType.INPUT)
     graph = {}
