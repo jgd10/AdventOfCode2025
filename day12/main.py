@@ -60,21 +60,22 @@ class Present:
             for i, c in enumerate(row.strip()):
                 if c == '#':
                     coords.add((i, j))
-        return Present(frozenset(coords), (0, 0), char)
+        return Present(frozenset(coords), (0, 0), shape_char=char)
 
     def move_origin(self, new_origin: tuple[int, int]) -> 'Present':
-        return Present(self.coords, new_origin)
+        return Present(self.coords, new_origin, self.shape_char)
 
     def move_in_direction(self, direction: Direction) -> 'Present':
         match direction:
             case Direction.N:
-                return Present(self.coords, (self.origin[0], self.origin[1]-1))
+                return Present(self.coords, (self.origin[0], self.origin[
+                    1]-1), self.shape_char)
             case Direction.E:
-                return Present(self.coords, (self.origin[0]+1, self.origin[1]))
+                return Present(self.coords, (self.origin[0]+1, self.origin[1]), self.shape_char)
             case Direction.W:
-                return Present(self.coords, (self.origin[0]-1, self.origin[1]))
+                return Present(self.coords, (self.origin[0]-1, self.origin[1]), self.shape_char)
             case Direction.S:
-                return Present(self.coords, (self.origin[0], self.origin[1]+1))
+                return Present(self.coords, (self.origin[0], self.origin[1]+1), self.shape_char)
             case _:
                 raise Exception(f"Unknown direction {direction}")
 
@@ -91,7 +92,7 @@ class Present:
     @functools.cached_property
     def rotate_cw(self) -> 'Present':
         new = {(y, 2-x) for x, y in self.coords}
-        return Present(frozenset(new), self.origin)
+        return Present(frozenset(new), self.origin, self.shape_char)
 
     def visualise(self):
         rows = []
@@ -147,10 +148,12 @@ class TreeSpace:
         min_area = sum(pr*p.area
                        for p, pr in zip(self.presents,
                                         self.present_requirements))
+        
         if len(self.coords) < min_area:
             return False
-        else:
-            return True
+        # For my input this check was sufficient
+        # else:
+        #     return True
         presents_to_place = []
         for index, number in enumerate(self.present_requirements):
             for _ in range(number):
@@ -158,7 +161,19 @@ class TreeSpace:
 
         self.placed_presents = set()
         placed_coords = set()
+        counter = 0
         while presents_to_place:
+            img = pbc.string_to_image(self.visualise(),
+                                      char_color_map={'0': (195, 15, 22),
+                                                      '1': (31, 39, 102),
+                                                      '2': (241, 217, 0),
+                                                      '3': (30, 121, 44),
+                                                      '4': 'white',
+                                                      '5': 'pink'},
+                                      fill_option=pbc.FillOption.BOTH)
+            pbc.save_image(img, f'./visualisation/tree_{self.size}_'
+                                f'{counter:04d}.png')
+            counter += 1
             current = presents_to_place.pop(0)
             for (i, j) in self.coords:
                 current = current.move_origin((i, j))
@@ -176,6 +191,7 @@ class TreeSpace:
                             placed_coords.update(current.relative_coords)
                             self.placed_presents.add(current)
                             fit_found = True
+
         return len(self.placed_presents) == sum(self.present_requirements)
 
 
@@ -193,8 +209,6 @@ def part1():
             counter += 1
         if tree.placed_presents is None:
             tree.placed_presents = set()
-        #img = pbc.string_to_image(tree.visualise(), preset='terrain', fill_option=pbc.FillOption.BOTH)
-        #pbc.save_image(img, f'./tree_{i:04d}.png')
     return counter
 
 
