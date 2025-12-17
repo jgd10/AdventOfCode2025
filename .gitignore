@@ -215,4 +215,6 @@ input.txt
 *.gif
 *.mp4
 *.avi
+*.ttf
+static/
 
