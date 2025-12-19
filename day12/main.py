@@ -153,8 +153,8 @@ class TreeSpace:
                        for p, pr in zip(self.presents,
                                         self.present_requirements))
         
-        if len(self.coords) < min_area:
-            return False
+        #if len(self.coords) < min_area:
+        #    return False
         # For my input this check was sufficient
         # else:
         #     return True
@@ -166,11 +166,73 @@ class TreeSpace:
         self.placed_presents = set()
         placed_coords = set()
         counter = 0
+        possible_origins = {coord for coord in self.coords if (coord[0])%3 == 0 and (coord[1])%3 == 0}
         while presents_to_place:
             counter += 1
-            self.random_movement(placed_coords, presents_to_place)
+            target = possible_origins.pop()
+            self.three_by_three(placed_coords, presents_to_place, target)
 
         return len(self.placed_presents) == sum(self.present_requirements)
+
+    def density_drop(self, placed_coords, presents_to_place):
+        current = presents_to_place.pop(0)
+        ycols = {c[1]: 0 for c in self.coords}
+        for p in placed_coords:
+            ycols[p[1]] += 1
+        min_val = min(ycols.values())
+        y_vals = [y for y, v in ycols.items() if v == min_val]
+        current = current.move_origin((0, y_vals.pop(0)))
+        rotations = 0
+        iterations = 0
+        while True:
+            self.save_space_to_image(current, iterations)
+            if (current.relative_coords.issubset(self.coords)
+                    and not current.relative_coords.intersection(placed_coords)):
+                placed_coords.update(current.relative_coords)
+                self.placed_presents.add(current)
+                break
+            elif not current.relative_coords.issubset(self.coords):
+                counter = 0
+                direction = Direction.N
+                while not current.relative_coords.issubset(self.coords):
+                    current = current.move_in_direction(direction)
+                    counter += 1
+                    iterations += 1
+                    if counter >= 3:
+                        direction = Direction.W
+                        counter = -3
+                    elif counter == 0:
+                        direction = Direction.S
+                    self.save_space_to_image(current, iterations)
+            elif rotations < 3:
+                current = current.rotate_cw
+                rotations += 1
+                iterations += 1
+                self.save_space_to_image(current, iterations)
+
+            rotations = 3
+            while current.relative_coords.issubset(self.coords) and current.relative_coords.intersection(placed_coords):
+                if rotations < 3:
+                    current = current.rotate_cw
+                    rotations += 1
+                else:
+                    current = current.move_in_direction(Direction.E)
+                    rotations = 0
+                iterations += 1
+                self.save_space_to_image(current, iterations)
+            rotations = 0
+
+    def three_by_three(self, placed_coords, presents_to_place, target):
+        current = presents_to_place.pop(0)
+        current = current.move_origin(target)
+        iterations = 0
+        if (current.relative_coords.issubset(self.coords)
+                and not current.relative_coords.intersection(placed_coords)):
+            placed_coords.update(current.relative_coords)
+            self.placed_presents.add(current)
+            self.save_space_to_image(current, iterations)
+        else:
+            presents_to_place.append(current)
 
     def random_placement(self, placed_coords, presents_to_place):
         current = presents_to_place.pop(0)
@@ -202,11 +264,7 @@ class TreeSpace:
         rotations = 3
         iterations = 0
         while True:
-            fraction = float(sum([p.area for p in self.placed_presents]))*100./(self.size[0]*self.size[1])
-            title = f'Space Filled = {fraction:.3f}% - Placing Shape #{len(self.placed_presents)+1:03d}/{sum(self.present_requirements)} Attempt #{iterations+1:03d}'
-            counter = f'{len(self.placed_presents):04d}-{iterations:04d}'
-            self.save_treespace_image(counter, title, current)
-            print(f'Saved {counter}')
+            self.save_space_to_image(current, iterations)
             iterations += 1
             if (current.relative_coords.issubset(self.coords)
                     and not current.relative_coords.intersection(placed_coords)):
@@ -234,9 +292,18 @@ class TreeSpace:
                         current = random.choice(possibles)
                     rotations = 0
         fraction = float(sum([p.area for p in self.placed_presents]))*100./(self.size[0]*self.size[1])
-        title = f'Space Filled = {fraction:.3f}% - Placing Shape #{len(self.placed_presents):03d}/{sum(self.present_requirements)} Attempt #{iterations+1:03d}'
+        title = f'Space Filled = {fraction:.3f}% - Placing Shape #{len(self.placed_presents):03d}/{sum(self.present_requirements)} Attempt #{iterations + 1:03d}'
         counter = f'{len(self.placed_presents):04d}-{iterations:04d}'
         self.save_treespace_image(counter, title, None)
+        print(f'Saved {counter}')
+
+    def save_space_to_image(self, current, iterations):
+        fraction = float(
+            sum([p.area for p in self.placed_presents])) * 100. / (
+                               self.size[0] * self.size[1])
+        title = f'Space Filled = {fraction:.3f}% - Placing Shape #{len(self.placed_presents) + 1:03d}/{sum(self.present_requirements)} Attempt #{iterations + 1:03d}'
+        counter = f'{len(self.placed_presents):04d}-{iterations:04d}'
+        self.save_treespace_image(counter, title, current)
         print(f'Saved {counter}')
 
     def save_treespace_image(self, counter: str | int, title: str, poised_shape: Present = None) -> None:
@@ -274,7 +341,7 @@ class TreeSpace:
             fill="black",
             font=font_title,
         )
-        canvas.save(f'./visualisation/tree_{self.size}_{self.image_counter:04d}.png')
+        canvas.save(f'./visualisation/threebythree/tree_{self.size}_{self.image_counter:04d}.png')
         self.image_counter += 1
 
 
