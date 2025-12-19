@@ -162,15 +162,16 @@ class TreeSpace:
         for index, number in enumerate(self.present_requirements):
             for _ in range(number):
                 presents_to_place.append(copy.deepcopy(self.presents[index]))
-        random.shuffle(presents_to_place)
+        #random.shuffle(presents_to_place)
         self.placed_presents = set()
         placed_coords = set()
-        counter = 0
-        possible_origins = {coord for coord in self.coords if (coord[0])%3 == 0 and (coord[1])%3 == 0}
+        #counter = 0
+        #possible_origins = {coord for coord in self.coords if (coord[0])%3 == 0 and (coord[1])%3 == 0}
         while presents_to_place:
-            counter += 1
-            target = possible_origins.pop()
-            self.three_by_three(placed_coords, presents_to_place, target)
+            for target in sorted(self.coords):
+                if not presents_to_place:
+                    break
+                self.simplest_with_rotation(placed_coords, presents_to_place, target)
 
         return len(self.placed_presents) == sum(self.present_requirements)
 
@@ -233,6 +234,36 @@ class TreeSpace:
             self.save_space_to_image(current, iterations)
         else:
             presents_to_place.append(current)
+
+    def simplest(self, placed_coords, presents_to_place, target):
+        current = presents_to_place.pop(0)
+        current = current.move_origin(target)
+        iterations = 0
+        if (current.relative_coords.issubset(self.coords)
+                and not current.relative_coords.intersection(placed_coords)):
+            placed_coords.update(current.relative_coords)
+            self.placed_presents.add(current)
+            self.save_space_to_image(current, iterations)
+        else:
+            presents_to_place.append(current)
+
+    def simplest_with_rotation(self, placed_coords, presents_to_place, target):
+        current = presents_to_place.pop(0)
+        current = current.move_origin(target)
+        iterations = 0
+        rotations = 0
+        while rotations < 3:
+            if (current.relative_coords.issubset(self.coords)
+                    and not current.relative_coords.intersection(placed_coords)):
+                placed_coords.update(current.relative_coords)
+                self.placed_presents.add(current)
+                self.save_space_to_image(current, iterations)
+                return
+            else:
+                current = current.rotate_cw
+                rotations += 1
+        presents_to_place.append(current)
+        return
 
     def random_placement(self, placed_coords, presents_to_place):
         current = presents_to_place.pop(0)
@@ -341,7 +372,7 @@ class TreeSpace:
             fill="black",
             font=font_title,
         )
-        canvas.save(f'./visualisation/threebythree/tree_{self.size}_{self.image_counter:04d}.png')
+        canvas.save(f'./visualisation/simplest_with_rotation/tree_{self.size}_{self.image_counter:04d}.png')
         self.image_counter += 1
 
 
